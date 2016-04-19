@@ -1,2 +1,6 @@
+.DS_Store
+npm-debug.log
+node_modules
+
 source/raw*
 source/chunks*
