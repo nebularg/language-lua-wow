@@ -1,0 +1,10 @@
+{
+  "name": "language-lua-wow",
+  "version": "0.0.0",
+  "description": "Add syntax highlighting for the World of Warcraft API in Lua files in Atom.",
+  "repository": "https://github.com/nebularg/language-lua-wow",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  }
+}
