@@ -2,7 +2,7 @@
 # This script generates the patterns used in lua-wow.cson
 #
 # Copy the relevate bits from the following sites into the specified file then
-# run the script! `python process.py > patterns.txt`
+# run the script! `python process.py > patterns.cson`
 #
 #   http://wow.gamepedia.com/Global_functions   -> raw_api
 #   http://wow.gamepedia.com/Events             -> raw_events
@@ -34,7 +34,7 @@ class APIParser(Parser):
     chunk_pattern = """  {
     'match': '(?<![^.]\\\\.|:)\\\\b(%s)\\\\b(?=\\\\s*(?:[({"\\\']|\\\\[\\\\[))'
     'name': 'support.function.wow.%s'
-  },"""
+  }"""
 
     @property
     def data(self):
@@ -130,7 +130,7 @@ class EventParser(Parser):
     chunk_pattern = r"""  {
     'match': '(\'|")(%s)\\1'
     'name': 'constant.wow.event'
-  },"""
+  }"""
 
     @property
     def data(self):
@@ -165,9 +165,9 @@ class WidgetParser(Parser):
     re_parse = re.compile(ur"([^:]+):([^\(]+)", re.I)
 
     chunk_pattern = r"""  {
-    'match': '(?<!=[.:])\\s*\\b(%s)\\b(?=[( {])'
+    'match': '(?<=[.:])\\s*\\b(%s)\\b(?=[( {])'
     'name': 'support.function.wow.widget.%s'
-  },"""
+  }"""
 
     chunk_list = set([
         'ArchaeologyDigSiteFrame',
@@ -314,5 +314,5 @@ class WidgetParser(Parser):
 
 if __name__ == '__main__':
     APIParser('raw_api').process()
-    EventParser('raw_events').process()
     WidgetParser('raw_widget').process()
+    EventParser('raw_events').process()
