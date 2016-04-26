@@ -2,7 +2,7 @@
 # This script generates the patterns used in lua-wow.cson
 #
 # Copy the relevate bits from the following sites into the specified file then
-# run the script! `python process.py > patterns.cson`
+# run the script! `python process.py > chunks.cson`
 #
 #   http://wow.gamepedia.com/Global_functions   -> raw_api
 #   http://wow.gamepedia.com/Events             -> raw_events
@@ -27,7 +27,8 @@ class Parser(object):
 
 
 class APIParser(Parser):
-    re_header = re.compile(ur"^(.+) Functions$", re.I)
+    re_header = re.compile(ur"^((.+) Functions)", re.I)
+    re_line = re.compile(ur"^(\w+\.?\w+)$", re.I)
     re_split_c = re.compile(ur"^(.+)\.(.+)$", re.I)
 
     # not raw because the brackets at the end break syntax hightlighting >.>
@@ -68,27 +69,37 @@ class APIParser(Parser):
             line = line.strip()
 
             if line:
-                # quick builtin test
-                if line == line.lower() and line not in whitelist:
-                    continue
-
-                # handle the C_ tables like language-lua handles std libs
-                if '.' in line:
-                    table, func = self.re_split_c.match(line).groups()
-                    if table not in tables:
-                        if last_table is not None:
-                            cleaned.append(ur'%s\\.(%s)' % (last_table, u'|'.join(tables[last_table])))
-
-                        tables[table] = []
-                        last_table = table
-
-                    tables[table].append(func)
-                else:
+                header = self.re_header.match(line)
+                if header:
                     if last_table is not None:
                         cleaned.append(ur'%s\\.(%s)' % (last_table, u'|'.join(tables[last_table])))
                         last_table = None
 
-                    cleaned.append(line)
+                    cleaned.append(header.groups()[0])
+                    continue
+
+                if self.re_line.match(line):
+                    # quick builtin test
+                    if line == line.lower() and line not in whitelist:
+                        continue
+
+                    # handle the C_ tables like language-lua handles std libs
+                    if '.' in line:
+                        table, func = self.re_split_c.match(line).groups()
+                        if table not in tables:
+                            if last_table is not None:
+                                cleaned.append(ur'%s\\.(%s)' % (last_table, u'|'.join(tables[last_table])))
+
+                            tables[table] = []
+                            last_table = table
+
+                        tables[table].append(func)
+                    else:
+                        if last_table is not None:
+                            cleaned.append(ur'%s\\.(%s)' % (last_table, u'|'.join(tables[last_table])))
+                            last_table = None
+
+                        cleaned.append(line)
 
         for line in lua:
             cleaned.append(line)
@@ -114,9 +125,10 @@ class APIParser(Parser):
                 if header:
                     chunks[header] = chunk
 
-                header = header_check.groups()[0].lower()
+                header = header_check.groups()[1].lower()
                 chunk = []
                 continue
+
             chunk.append(line)
 
         chunks[header] = chunk
