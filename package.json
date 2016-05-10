@@ -9,7 +9,7 @@
     "lua"
   ],
   "repository": "https://github.com/nebularg/language-lua-wow",
-  "license": "MIT",
+  "license": "Unlicense",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   }
