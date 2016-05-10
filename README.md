@@ -37,3 +37,5 @@ Themes [_should_](https://github.com/atom/one-dark-syntax/blob/master/styles/syn
 Originally created from the [World of Warcraft Textmate Bundle](http://www.wowace.com/addons/wow-textmate/).
 
 Keywords are updated from [Wowpedia](http://wow.gamepedia.com/) and [World of Warcraft Programming](http://wowprogramming.com/docs).
+
+Lua syntax and snippets are from [language-lua](https://github.com/FireZenk/language-lua) by FireZenk.
