@@ -5,6 +5,7 @@
 
 'repository':
   'language-lua':
+    # language-lua 0.9.7
     # Copyright (c) 2014 FireZenk <firezenk@gmail.com>
     #
     # Permission is hereby granted, free of charge, to any person
@@ -152,7 +153,7 @@
         ]
       }
       {
-        'match': '\\b(and|or|not|break|do|else|for|if|elseif|return|then|repeat|while|until|end|function|local|in)\\b'
+        'match': '\\b(and|or|not|break|do|else|for|if|elseif|return|then|repeat|while|until|end|function|local|in|goto)\\b'
         'name': 'keyword.control.lua'
       }
       {
@@ -184,6 +185,7 @@
         'name': 'keyword.operator.lua'
       }
     ]
+  # end language-lua
 
 'patterns': [
   {
