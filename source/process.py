@@ -4,14 +4,16 @@
 # Copy the relevate bits from the following sites into the specified file then
 # run the script! `python process.py > chunks.cson`
 #
-#   http://wow.gamepedia.com/Global_functions   -> raw_api
-#   http://wow.gamepedia.com/Events             -> raw_events
-#   http://wowprogramming.com/docs/widgets      -> raw_widgets
-#
-# Could probably automate downloading the content, but meh
+#   https://wow.gamepedia.com/Global_functions#FrameXML_Functions
+#     - Copy the FrameXML functions into raw_framexml
+#   http://wowprogramming.com/docs/widgets
+#     - Copy the left-side headers and functions into raw_widget
+#   https://www.townlong-yak.com/framexml/
+#     - Extract the Helix folder
+#     - Run export_helix.lua to generate raw_api and raw_events
 #
 
-from __future__ import with_statement
+from __future__ import with_statement, print_function
 import re
 import sys
 
@@ -27,136 +29,95 @@ class Parser(object):
 
 
 class APIParser(Parser):
-    re_header = re.compile(ur"^((.+) Functions)", re.I)
-    re_line = re.compile(ur"^(\w+\.?\w+)$", re.I)
-    re_split_c = re.compile(ur"^(.+)\.(.+)$", re.I)
+    re_split_c = re.compile(ur"^(.+)\.(.+)$")
 
-    # not raw because the brackets at the end break syntax hightlighting >.>
     chunk_pattern = """  {
     'match': '(?<![^.]\\\\.|:)\\\\b(%s)\\\\b(?=\\\\s*(?:[({"\\\']|\\\\[\\\\[))'
     'name': 'support.function.wow.%s'
   }"""
 
-    @property
-    def data(self):
-        raw = self.raw_data
-        cleaned = []
-        whitelist = [
-            # add the c-side lua functions
-            'debugbreak', 'debugdump', 'debuginfo', 'debugload', 'debuglocals', 'debugprint',
-            'debugprofilestart', 'debugprofilestop', 'debugstack', 'debugtimestamp',
-            'hooksecure', 'issecure', 'issecurevariable', 'forceinsecure', 'securecall',
-            'getprinthandler', 'print', 'setprinthandler', 'tostringall'
-        ]
-        lua = [
-            # some hardcoded non-standard std functions
-            'Lua Functions',
-            'fastrandom',  # old math.random, which has been replaced by securerandom
-            'fmod', 'mod',  # math.mod renamed math.fmod, with math.mod == %
-            # trig functions that operate in degrees (math lib uses radians)
-            'acos', 'asin', 'atan', 'atan2', 'cos', 'rad', 'sin', 'tan'
-            # string lib references and utf8 stuff
-            'strbyte', 'strchar', 'strcmputf8i', 'strconcat', 'strfind', 'strjoin', 'strlen',
-            'strlenutf8', 'strlower', 'strmatch', 'strrep', 'strrev', 'strsplit', 'strsub',
-            'strtrim', 'strupper',
-            # table.wipe, how does lua not have this by default D;
-            'table.wipe', 'wipe'
-        ]
+    std_lua = [
+        'assert',
+        'bit.arshift', 'bit.band', 'bit.bnot', 'bit.bor', 'bit.bxor', 'bit.lshift', 'bit.mod', 'bit.rshift',
+        'collectgarbage',
+        'coroutine.create', 'coroutine.resume', 'coroutine.running', 'coroutine.status', 'coroutine.wrap', 'coroutine.yield',
+        'error', 'gcinfo', 'getfenv', 'getmetatable', 'loadstring',
+        'math.abs', 'math.acos', 'math.asin', 'math.atan', 'math.atan2', 'math.ceil', 'math.cos', 'math.cosh', 'math.deg',
+        'math.exp', 'math.floor', 'math.fmod', 'math.frexp', 'math.ldexp', 'math.log', 'math.log10', 'math.max', 'math.min',
+        'math.modf', 'math.pow', 'math.rad', 'math.random', 'math.sin', 'math.sinh', 'math.sqrt', 'math.tan', 'math.tanh',
+        'next', 'pcall', 'rawequal', 'rawget', 'rawset', 'select', 'setfenv', 'setmetatable',
+        'string.byte', 'string.char', 'string.find', 'string.format', 'string.gfind', 'string.gmatch', 'string.gsub',
+        'string.len', 'string.lower', 'string.match', 'string.rep', 'string.reverse', 'string.sub', 'string.upper',
+        'table.concat', 'table.foreach', 'table.foreachi', 'table.getn', 'table.insert', 'table.maxn',
+        'table.remove', 'table.setn', 'table.sort',
+        'tonumber', 'tostring', 'type', 'unpack', 'xpcall',
+    ]
+
+    def clean(self, data):
+        api = []
+        lua = []
+
         tables = {}
         last_table = None
 
-        for line in raw:
+        for line in data:
             line = line.strip()
 
             if line:
-                header = self.re_header.match(line)
-                if header:
-                    if last_table is not None:
+                cleaned = api
+                if line == line.lower():
+                    cleaned = lua
+                    if line in self.std_lua:
+                        continue
+
+                # compress collections
+                if '.' in line:
+                    table, func = self.re_split_c.match(line).groups()
+                    if table not in tables:
+                        if last_table:
+                            cleaned.append(ur'%s\\.(%s)' % (last_table, u'|'.join(tables[last_table])))
+
+                        tables[table] = []
+                        last_table = table
+
+                    tables[table].append(func)
+                else:
+                    if last_table:
                         cleaned.append(ur'%s\\.(%s)' % (last_table, u'|'.join(tables[last_table])))
                         last_table = None
 
-                    cleaned.append(header.groups()[0])
-                    continue
+                    cleaned.append(line)
 
-                if self.re_line.match(line):
-                    # quick builtin test
-                    if line == line.lower() and line not in whitelist:
-                        continue
+        return { 'lua': lua, 'api': api }
 
-                    # handle the C_ tables like language-lua handles std libs
-                    if '.' in line:
-                        table, func = self.re_split_c.match(line).groups()
-                        if table not in tables:
-                            if last_table is not None:
-                                cleaned.append(ur'%s\\.(%s)' % (last_table, u'|'.join(tables[last_table])))
-
-                            tables[table] = []
-                            last_table = table
-
-                        tables[table].append(func)
-                    else:
-                        if last_table is not None:
-                            cleaned.append(ur'%s\\.(%s)' % (last_table, u'|'.join(tables[last_table])))
-                            last_table = None
-
-                        cleaned.append(line)
-
-        for line in lua:
-            cleaned.append(line)
-
-        return cleaned
+    @property
+    def data(self):
+        return self.clean(self.raw_data)
 
     def process(self):
-        date = None
+        data = None
         try:
             data = self.data
         except IOError, message:
-            print >> sys.stderr, message
+            print(message, file=sys.stderr)
             return
 
-        chunks = {}
-
-        header, chunk = None, None
-
-        for line in data:
-            header_check = self.re_header.match(line)
-            if header_check:
-                # put up the last header
-                if header:
-                    chunks[header] = chunk
-
-                header = header_check.groups()[1].lower()
-                chunk = []
-                continue
-
-            chunk.append(line)
-
-        chunks[header] = chunk
-
-        for header, chunk in chunks.iteritems():
-            print self.chunk_pattern % (u'|'.join(chunk), header)
+        for header, group in data.iteritems():
+            print(self.chunk_pattern % (u'|'.join(group), header))
 
 
-class EventParser(Parser):
-    re_strip_desc = re.compile(ur'^([A-Z]+_[A-Z_]+)\s.+')
-    chunk_pattern = r"""  {
-    'match': '(\'|")(%s)\\1'
-    'name': 'constant.wow.event'
+class FrameXMLParser(Parser):
+    chunk_pattern = """  {
+    'match': '(?<![^.]\\\\.|:)\\\\b(%s)\\\\b(?=\\\\s*(?:[({"\\\']|\\\\[\\\\[))'
+    'name': 'support.function.wow.framexml'
   }"""
 
     @property
     def data(self):
-        raw = self.raw_data
         cleaned = []
 
-        for line in raw:
-            line = line.strip()
-            if not line or line.startswith('REMOVED '):
-                continue
-
-            match = self.re_strip_desc.match(line)
-            if match:
-                cleaned.append(match.groups()[0])
+        for line in self.raw_data:
+            cleaned.append(line.strip())
 
         return cleaned
 
@@ -165,10 +126,37 @@ class EventParser(Parser):
         try:
             data = self.data
         except IOError, message:
-            print >> sys.stderr, message
+            print(message, file=sys.stderr)
             return
 
-        print self.chunk_pattern % u'|'.join(data)
+        print(self.chunk_pattern % u'|'.join(data))
+
+
+
+class EventParser(Parser):
+    chunk_pattern = r"""  {
+    'match': '(\'|")(%s)\\1'
+    'name': 'constant.wow.event'
+  }"""
+
+    @property
+    def data(self):
+        cleaned = []
+
+        for line in self.raw_data:
+            cleaned.append(line.strip())
+
+        return cleaned
+
+    def process(self):
+        data = None
+        try:
+            data = self.data
+        except IOError, message:
+            print(message, file=sys.stderr)
+            return
+
+        print(self.chunk_pattern % u'|'.join(data))
 
 
 class WidgetParser(Parser):
@@ -264,9 +252,9 @@ class WidgetParser(Parser):
 
         return cleaned
 
-    def clean_chunks(self):
-        chunk_sets = dict((header, set(funcs)) for header, funcs in self.chunks.items())
-        new_chunks = dict((header, set(funcs)) for header, funcs in self.chunks.items())
+    def clean_chunks(self, chunks):
+        chunk_sets = dict((header, set(funcs)) for header, funcs in chunks.items())
+        new_chunks = dict((header, set(funcs)) for header, funcs in chunks.items())
 
         # self.hierarchy['process_order'].reverse()
         for header in self.hierarchy['process_order']:
@@ -283,17 +271,17 @@ class WidgetParser(Parser):
             diff = common == chunk_sets[header]
 
             if not diff:
-                print >> sys.stderr, 'fuck'
-                print >> sys.stderr, header, chunk_sets[header].difference(common)
+                print('fuck', file=sys.stderr)
+                print(header, chunk_sets[header].difference(common), file=sys.stderr)
 
-        self.chunks = new_chunks
+        return new_chunks
 
     def process(self):
         data = None
         try:
             data = self.data
         except IOError, message:
-            print >> sys.stderr, message
+            print(message, file=sys.stderr)
             return
 
         chunks = {}
@@ -304,27 +292,27 @@ class WidgetParser(Parser):
             match = self.re_parse.match(line.strip())
 
             if not match:
-                print >> sys.stderr, "Line not matched: %s" % line
+                print("Line not matched: %s" % line, file=sys.stderr)
                 continue
 
             header, func = match.groups()
 
             if header not in self.chunk_list:
-                print >> sys.stderr, "Header not found: %s" % header
+                print("Header not found: %s" % header, file=sys.stderr)
 
             if header not in chunks:
                 chunks[header] = []
 
             chunks[header].append(func)
 
-        self.chunks = chunks
-        self.clean_chunks()
+        chunks = self.clean_chunks(chunks)
 
-        for header, chunk in self.chunks.iteritems():
-            print self.chunk_pattern % (u'|'.join(chunk), header)
+        for header, chunk in chunks.iteritems():
+            print(self.chunk_pattern % (u'|'.join(chunk), header))
 
 
 if __name__ == '__main__':
     APIParser('raw_api').process()
+    FrameXMLParser('raw_framexml').process()
     WidgetParser('raw_widget').process()
     EventParser('raw_events').process()
