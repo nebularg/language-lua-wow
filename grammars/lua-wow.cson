@@ -189,7 +189,7 @@
 
 'patterns': [
   {
-    'match': '(?<![^.]\\.|:)\\b(abs|acos|asin|atan|atan2|ceil|cos|date|debugbreak|debugdump|debuginfo|debugload|debuglocals|debugprint|debugprofilestart|debugprofilestop|debugstack|debugtimestamp|deg|difftime|exp|fastrandom|floor|forceinsecure|foreach|foreachi|format|frexp|geterrorhandler|getn|gmatch|gsub|hooksecurefunc|issecure|issecurevariable|ldexp|log|log10|max|min|mod|rad|random|scrub|securecall|seterrorhandler|sin|sort|sqrt|strbyte|strchar|strcmputf8i|strconcat|strfind|string\\.(join|split|trim)|strjoin|strlen|strlenutf8|strlower|strmatch|strrep|strrev|strsplit|strsub|strtrim|strupper|table\\.(removemulti|wipe)|tan|time|tinsert|tremove|wipe)\\b(?=\\s*(?:[({"\']|\\[\\[))'
+    'match': '(?<![^.]\\.|:)\\b(abs|acos|asin|atan|atan2|bit\\.(arshift|band|bnot|bor|bxor|lshift|mod|rshift)|ceil|cos|date|debugbreak|debugdump|debuginfo|debugload|debuglocals|debugprint|debugprofilestart|debugprofilestop|debugstack|debugtimestamp|deg|difftime|exp|fastrandom|floor|forceinsecure|foreach|foreachi|format|frexp|geterrorhandler|getn|gmatch|gsub|hooksecurefunc|issecure|issecurevariable|ldexp|log|log10|max|min|mod|rad|random|scrub|securecall|seterrorhandler|sin|sort|sqrt|strbyte|strchar|strcmputf8i|strconcat|strfind|string\\.(join|split|trim)|strjoin|strlen|strlenutf8|strlower|strmatch|strrep|strrev|strsplit|strsub|strtrim|strupper|table\\.(removemulti|wipe)|tan|time|tinsert|tremove|wipe)\\b(?=\\s*(?:[({"\']|\\[\\[))'
     'name': 'support.function.wow.lua'
   }
   {

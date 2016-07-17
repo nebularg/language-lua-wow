@@ -36,21 +36,27 @@ class APIParser(Parser):
     'name': 'support.function.wow.%s'
   }"""
 
+    # standard env for lua 5.1.4
     std_lua = [
-        'assert',
-        'bit.arshift', 'bit.band', 'bit.bnot', 'bit.bor', 'bit.bxor', 'bit.lshift', 'bit.mod', 'bit.rshift',
-        'collectgarbage',
+        '_G', '_VERSION', 'assert', 'collectgarbage',
         'coroutine.create', 'coroutine.resume', 'coroutine.running', 'coroutine.status', 'coroutine.wrap', 'coroutine.yield',
-        'error', 'gcinfo', 'getfenv', 'getmetatable', 'loadstring',
+        'debug.debug', 'debug.getfenv', 'debug.gethook', 'debug.getinfo', 'debug.getlocal', 'debug.getmetatable', 'debug.getregistry',
+        'debug.getupvalue', 'debug.setfenv', 'debug.sethook', 'debug.setlocal', 'debug.setmetatable', 'debug.setupvalue', 'debug.traceback',
+        'dofile', 'error', 'gcinfo', 'getfenv', 'getmetatable',
+        'io.close', 'io.flush', 'io.input', 'io.lines', 'io.open', 'io.output', 'io.popen', 'io.read', 'io.stderr', 'io.stdin', 'io.stdout',
+        'io.tmpfile', 'io.type', 'io.write',
+        'ipairs', 'load', 'loadfile', 'loadstring',
         'math.abs', 'math.acos', 'math.asin', 'math.atan', 'math.atan2', 'math.ceil', 'math.cos', 'math.cosh', 'math.deg',
         'math.exp', 'math.floor', 'math.fmod', 'math.frexp', 'math.ldexp', 'math.log', 'math.log10', 'math.max', 'math.min',
         'math.modf', 'math.pow', 'math.rad', 'math.random', 'math.sin', 'math.sinh', 'math.sqrt', 'math.tan', 'math.tanh',
-        'next', 'pcall', 'rawequal', 'rawget', 'rawset', 'select', 'setfenv', 'setmetatable',
-        'string.byte', 'string.char', 'string.find', 'string.format', 'string.gfind', 'string.gmatch', 'string.gsub',
+        'module', 'newproxy', 'next',
+        'os.clock', 'os.date', 'os.difftime', 'os.execute', 'os.exit', 'os.getenv', 'os.remove', 'os.rename', 'os.setlocale', 'os.time', 'os.tmpname',
+        'pairs', 'pcall', 'rawequal', 'rawget', 'rawset', 'require', 'select', 'setfenv', 'setmetatable',
+        'string.byte', 'string.char', 'string.dump', 'string.find', 'string.format', 'string.gfind', 'string.gmatch', 'string.gsub',
         'string.len', 'string.lower', 'string.match', 'string.rep', 'string.reverse', 'string.sub', 'string.upper',
-        'table.concat', 'table.foreach', 'table.foreachi', 'table.getn', 'table.insert', 'table.maxn',
+        'table.concat', 'table.foreach', 'table.foreachi', 'table.getn', 'table.insert', 'table.maxn', 'table.pack',
         'table.remove', 'table.setn', 'table.sort',
-        'tonumber', 'tostring', 'type', 'unpack', 'xpcall',
+        'tonumber', 'tostring', 'type', 'unpack', 'xpcall'
     ]
 
     def clean(self, data):
